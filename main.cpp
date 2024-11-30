@@ -3,9 +3,9 @@
 #include <string>
 #include <mutex>
 #include <memory>
- 
- //Abstrakcyjna klasa Log
- class Log {
+
+// Abstrakcyjna klasa Log
+class Log {
 public:
     virtual ~Log() = default;
     virtual std::string getMessage() const = 0;  // Metoda do pobierania wiadomości logu
@@ -59,45 +59,42 @@ public:
     }
 };
 
-
-//Singleton Logger
+// Singleton Logger
 class Logger {
 private:
     Logger() {}
-    std::vector<std::string> logs;
-    std::mutex mutex;
-    static Logger* instance;
- 
+    std::vector<std::unique_ptr<Log>> logs;  // Wektor logów przechowujący unikalne wskaźniki
+    std::mutex mutex;  // Synchronizacja dostępu
+
 public:
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
-    
-    //Statyczna metoda zwracająca instancję logegra
+
+    // Statyczna metoda zwracająca instancję loggera
     static Logger& getInstance() {
-        if (instance == nullptr) {
-            instance = new Logger();
-        }
-        return *instance;
+        static Logger instance;  // Bezpieczna inicjalizacja singletona
+        return instance;
     }
-    //Logowanie wiadomości przy użyciu fabryki
+
+    // Logowanie wiadomości przy użyciu fabryki
     void logMessage(const std::string& type, const std::string& message) {
-    std::lock_guard<std::mutex> lock(mutex);  // Synchronizacja
-    auto log = LogFactory::createLog(type, message);  // Tworzenie logu
-    if (log) {
-        logs.push_back(std::move(log));  // Dodawanie logu
-    	}
+        std::lock_guard<std::mutex> lock(mutex);  // Synchronizacja
+        auto log = LogFactory::createLog(type, message);  // Tworzenie logu
+        if (log) {
+            logs.push_back(std::move(log));  // Dodawanie logu
+        } else {
+            std::cout << "Nieprawidłowy typ logu: " << type << "\n";
+        }
     }
-    //Wyświetlanie logów
+
+    // Wyświetlanie logów
     void displayLogs() {
-        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);  // Synchronizacja
         for (const auto& log : logs) {
-            std::cout << log << std::endl;
+            std::cout << log->getMessage() << std::endl;  // Wywołanie metody getMessage
         }
     }
 };
- 
-// Inicjalizacja instancji Loggera
-Logger* Logger::instance = nullptr;
 
 int main() {
     // Pobranie instancji loggera
@@ -136,3 +133,4 @@ int main() {
 
     return 0;
 }
+
