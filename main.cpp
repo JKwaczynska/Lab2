@@ -80,9 +80,12 @@ public:
         return *instance;
     }
     //Logowanie wiadomości przy użyciu fabryki
-    void logMessage(const std::string& message) {
-        std::lock_guard<std::mutex> lock(mutex);
-        logs.push_back(message);
+    void logMessage(const std::string& type, const std::string& message) {
+    std::lock_guard<std::mutex> lock(mutex);  // Synchronizacja
+    auto log = LogFactory::createLog(type, message);  // Tworzenie logu
+    if (log) {
+        logs.push_back(std::move(log));  // Dodawanie logu
+    	}
     }
     //Wyświetlanie logów
     void displayLogs() {
